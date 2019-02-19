@@ -1,0 +1,52 @@
+
+server {
+    listen 80;
+    # Uncomment if you have ipv6
+    # listen [::]:80 default;
+    server_name default;
+
+    index index.php index.html index.htm;
+
+    root /home/kyle/projects/redis-nginx/public/;
+
+    location ~ ^/(config|\.ht|db_structure\.xml|README|\.git) {
+	    deny all;
+    }
+
+    location / {
+        set $redis_key http://$host$uri:$query_string;
+        add_header 'Content-Type' 'text/html; charset=UTF-8';
+        redis_pass 127.0.0.1:6379;
+        error_page     404 = @backend;
+        error_page     405 = @backend;
+    }
+
+    location /account {
+        set $redis_key http://$host$uri:$query_string:$cookie_laravel_session;
+        add_header 'Content-Type' 'text/html; charset=UTF-8';
+        redis_pass 127.0.0.1:6379;
+	    error_page     404 = @backend;
+        error_page     405 = @backend;
+	}
+
+	location @backend {
+        try_files $uri $uri/ /index.php?$query_string;
+	}
+
+    location ~ ^(.+?\.php)(/.*)?$ {
+        try_files $1 = 404;
+
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$1;
+        fastcgi_param PATH_INFO $2;
+
+        # TODO, figure out when/where this can be commented out
+        # fastcgi_param HTTPS on;
+        fastcgi_buffers 16 16k;
+        fastcgi_buffer_size 32k;
+        fastcgi_read_timeout 120;
+        fastcgi_pass php;
+    }
+
+}
+
