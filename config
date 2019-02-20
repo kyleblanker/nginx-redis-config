@@ -25,13 +25,13 @@ server {
         set $redis_key http://$host$uri:$query_string:$cookie_laravel_session;
         add_header 'Content-Type' 'text/html; charset=UTF-8';
         redis_pass 127.0.0.1:6379;
-	    error_page     404 = @backend;
+	error_page     404 = @backend;
         error_page     405 = @backend;
-	}
+    }
 
-	location @backend {
+    location @backend {
         try_files $uri $uri/ /index.php?$query_string;
-	}
+    }
 
     location ~ ^(.+?\.php)(/.*)?$ {
         try_files $1 = 404;
